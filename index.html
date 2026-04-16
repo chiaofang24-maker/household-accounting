@@ -84,11 +84,10 @@
 
     function getToday() {
       var now = new Date();
-      var offset = 8 * 60;
-      var local = new Date(now.getTime() + (offset - now.getTimezoneOffset()) * 60000);
-      var year = local.getFullYear();
-      var month = String(local.getMonth() + 1).padStart(2, '0');
-      var day = String(local.getDate()).padStart(2, '0');
+      var taiwanDate = new Date(now.toLocaleString('en-US', {timeZone: 'Asia/Taipei'}));
+      var year = taiwanDate.getFullYear();
+      var month = String(taiwanDate.getMonth() + 1).padStart(2, '0');
+      var day = String(taiwanDate.getDate()).padStart(2, '0');
       return year + '-' + month + '-' + day;
     }
 
