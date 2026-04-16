@@ -84,9 +84,11 @@
 
     function getToday() {
       var now = new Date();
-      var year = now.getFullYear();
-      var month = String(now.getMonth() + 1).padStart(2, '0');
-      var day = String(now.getDate()).padStart(2, '0');
+      var offset = 8 * 60;
+      var local = new Date(now.getTime() + (offset - now.getTimezoneOffset()) * 60000);
+      var year = local.getFullYear();
+      var month = String(local.getMonth() + 1).padStart(2, '0');
+      var day = String(local.getDate()).padStart(2, '0');
       return year + '-' + month + '-' + day;
     }
 
