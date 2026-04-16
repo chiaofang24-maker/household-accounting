@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>每日記帳</title>
+  <style>
+    body { font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+    h2 { text-align: center; color: #333; }
+    .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    label { display: block; margin-top: 14px; font-weight: bold; color: #555; }
+    select, input { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+    button { width: 100%; margin-top: 20px; padding: 14px; background: #4CAF50; color: white; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; }
+    button:hover { background: #45a049; }
+    #msg { text-align: center; margin-top: 14px; font-size: 16px; color: green; }
+    #itemCustom { display: none; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h2>📒 每日記帳</h2>
+  <div class="card">
+    <label>日期</label>
+    <input type="date" id="date">
+
+    <label>類別</label>
+    <select id="category" onchange="updateItems()">
+      <option value="雞舍固定">雞舍固定支出</option>
+      <option value="雞舍浮動">雞舍浮動支出</option>
+      <option value="雞舍收入">雞舍收入</option>
+      <option value="家庭固定">家庭固定支出</option>
+      <option value="家庭浮動">家庭浮動支出</option>
+      <option value="其他">其他</option>
+    </select>
+
+    <label>項目名稱</label>
+    <select id="itemSelect" onchange="checkCustom()"></select>
+    <input type="text" id="itemCustom" placeholder="請輸入項目名稱">
+
+    <label>金額</label>
+    <input type="number" id="amount" placeholder="請輸入數字">
+
+    <label>備註（選填）</label>
+    <input type="text" id="note" placeholder="選填">
+
+    <button onclick="submitRecord()">✅ 儲存</button>
+    <div id="msg"></div>
+  </div>
+
+  <script>
+    var GAS_URL = 'https://script.google.com/macros/s/AKfycbyvyqdjNd-_6sxh7G-axvsj1wF6GnHurog-lZuBkLnn8Fi0PlJXoHe8Tz-D2bhoQgEx1w/exec';
+
+    var itemMap = {
+      '雞舍固定': ['死雞清運費','金海龍','租金','地磅','抓雞工資','裝袋工資','袋子','洗雞舍','粗糠','電費','其他（手動輸入）'],
+      '雞舍浮動': ['工人便當','工人','其他（手動輸入）'],
+      '雞舍收入': ['雞糞收入','代養費前金','代養費後金','其他（手動輸入）'],
+      '家庭固定': ['電話費','網路費','國民年金','健保','小白維護費','小白驗車費','牌照稅','燃料稅','其他（手動輸入）'],
+      '家庭浮動': ['三餐','飲料','全聯','好市多','寶雅','九如','水','菸','加油儲值','樂透','其他（手動輸入）'],
+      '其他': ['其他（手動輸入）']
+    };
+
+    function updateItems() {
+      var category = document.getElementById('category').value;
+      var select = document.getElementById('itemSelect');
+      select.innerHTML = '';
+      itemMap[category].forEach(function(item) {
+        var opt = document.createElement('option');
+        opt.value = item;
+        opt.text = item;
+        select.appendChild(opt);
+      });
+      checkCustom();
+    }
+
+    function checkCustom() {
+      var selected = document.getElementById('itemSelect').value;
+      var customInput = document.getElementById('itemCustom');
+      if (selected === '其他（手動輸入）') {
+        customInput.style.display = 'block';
+      } else {
+        customInput.style.display = 'none';
+        customInput.value = '';
+      }
+    }
+
+    function getToday() {
+      var now = new Date();
+      var year = now.getFullYear();
+      var month = String(now.getMonth() + 1).padStart(2, '0');
+      var day = String(now.getDate()).padStart(2, '0');
+      return year + '-' + month + '-' + day;
+    }
+
+    window.onload = function() {
+      document.getElementById('date').value = getToday();
+      updateItems();
+    };
+
+    function submitRecord() {
+      var dateRaw = document.getElementById('date').value;
+      var category = document.getElementById('category').value;
+      var selectedItem = document.getElementById('itemSelect').value;
+      var customItem = document.getElementById('itemCustom').value;
+      var item = selectedItem === '其他（手動輸入）' ? customItem : selectedItem;
+      var amount = document.getElementById('amount').value;
+      var note = document.getElementById('note').value;
+
+      var parts = dateRaw.split('-');
+      var fullDate = parts[0] + '/' + parts[1] + '/' + parts[2];
+
+      if (!dateRaw || !item || !amount) {
+        document.getElementById('msg').style.color = 'red';
+        document.getElementById('msg').innerText = '⚠️ 請填寫日期、項目和金額';
+        return;
+      }
+
+      document.getElementById('msg').style.color = 'gray';
+      document.getElementById('msg').innerText = '儲存中...';
+
+      fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          date: fullDate,
+          fullDate: fullDate,
+          category: category,
+          item: item,
+          amount: Number(amount),
+          note: note
+        })
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        document.getElementById('msg').style.color = 'green';
+        document.getElementById('msg').innerText = '✅ ' + data.message;
+        document.getElementById('amount').value = '';
+        document.getElementById('note').value = '';
+        document.getElementById('itemCustom').value = '';
+      })
+      .catch(function(err) {
+        document.getElementById('msg').style.color = 'red';
+        document.getElementById('msg').innerText = '❌ 錯誤：' + err.message;
+      });
+    }
+  </script>
+</body>
+</html>
